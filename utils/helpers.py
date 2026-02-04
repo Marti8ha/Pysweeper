@@ -1,7 +1,7 @@
 """Utility functions for coordinate conversion and UI helpers."""
 
-
 import pygame
+import settings
 
 
 def getTileFromMouse(pos, tileSize, offsetX=0, offsetY=0):
@@ -41,30 +41,47 @@ def centerText(surface, text, font, color, yOffset=0):
 
 
 def drawGridLines(surface, startX, startY, rows, cols, tileSize):
-    """Draw grid lines for visual board separation."""
+    """Draw subtle grid lines for visual board separation."""
+    lineColor = settings.COLORS["tile_border_dark"]
     for r in range(rows + 1):
         y = startY + r * tileSize
-        pygame.draw.line(surface, (128, 128, 128), (startX, y), (startX + cols * tileSize, y))
+        pygame.draw.line(surface, lineColor, (startX, y), (startX + cols * tileSize, y), 1)
 
     for c in range(cols + 1):
         x = startX + c * tileSize
-        pygame.draw.line(surface, (128, 128, 128), (x, startY), (x, startY + rows * tileSize))
+        pygame.draw.line(surface, lineColor, (x, startY), (x, startY + rows * tileSize), 1)
 
 
-def drawRaisedRect(surface, rect, color=(192, 192, 192)):
-    """Draw a 3D raised rectangle effect."""
+def drawRaisedRect(surface, rect, color=None):
+    """Draw a 3D raised rectangle effect with dark theme."""
+    if color is None:
+        color = settings.COLORS["tile_unrevealed"]
+    
+    # Main background
     pygame.draw.rect(surface, color, rect)
-    pygame.draw.rect(surface, (255, 255, 255), rect, 2)
-    pygame.draw.rect(surface, (128, 128, 128), (rect.right - 2, rect.top, 2, rect.height))
-    pygame.draw.rect(surface, (128, 128, 128), (rect.left, rect.bottom - 2, rect.width, 2))
+    
+    # Light border (top and left)
+    lightColor = settings.COLORS["tile_border_light"]
+    pygame.draw.line(surface, lightColor, (rect.left, rect.top), (rect.right, rect.top), 2)
+    pygame.draw.line(surface, lightColor, (rect.left, rect.top), (rect.left, rect.bottom), 2)
+    
+    # Dark border (bottom and right)
+    darkColor = settings.COLORS["tile_border_dark"]
+    pygame.draw.line(surface, darkColor, (rect.left, rect.bottom), (rect.right, rect.bottom), 2)
+    pygame.draw.line(surface, darkColor, (rect.right, rect.top), (rect.right, rect.bottom), 2)
 
 
-def drawPressedRect(surface, rect, color=(128, 128, 128)):
-    """Draw a 3D pressed/depressed rectangle effect."""
+def drawPressedRect(surface, rect, color=None):
+    """Draw a 3D pressed/depressed rectangle effect with dark theme."""
+    if color is None:
+        color = settings.COLORS["tile_revealed"]
+    
+    # Main background
     pygame.draw.rect(surface, color, rect)
-    pygame.draw.rect(surface, (128, 128, 128), rect, 2)
-    pygame.draw.rect(surface, (255, 255, 255), (rect.left, rect.top, rect.width, 2))
-    pygame.draw.rect(surface, (255, 255, 255), (rect.left, rect.top, 2, rect.height))
+    
+    # Dark inner border (gives pressed appearance)
+    darkColor = settings.COLORS["tile_border_dark"]
+    pygame.draw.rect(surface, darkColor, rect, 1)
 
 
 def formatTime(seconds):
@@ -77,3 +94,21 @@ def formatTime(seconds):
 def clamp(value, minValue, maxValue):
     """Constrain a value within specified bounds."""
     return max(minValue, min(value, maxValue))
+
+
+def drawGlow(surface, rect, color, radius=10, intensity=100):
+    """Draw a subtle glow effect around a rectangle.
+    
+    Args:
+        surface: target surface
+        rect: pygame.Rect or (x, y, width, height)
+        color: RGB color tuple
+        radius: glow radius in pixels
+        intensity: glow intensity (0-255)
+    """
+    glowRect = pygame.Rect(rect)
+    glowRect = glowRect.inflate(radius * 2, radius * 2)
+    
+    glowSurface = pygame.Surface(glowRect.size, pygame.SRCALPHA)
+    pygame.draw.rect(glowSurface, (*color, intensity), glowSurface.get_rect(), border_radius=radius)
+    surface.blit(glowSurface, glowRect.topleft)

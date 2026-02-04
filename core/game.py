@@ -5,6 +5,9 @@ import pygame
 import sys
 from .state import GameState, Difficulty
 from .board import Board
+from ui.hud import Hud
+from ui.menu import Menu
+import settings
 
 
 class Game:
@@ -17,15 +20,25 @@ class Game:
         self.state = GameState.MENU
         self.board = None
         self.font = None
+        self.hud = None
+        self.menu = None
         self.initDisplay()
         self.running = True
+        self.startTime = 0
 
     def initDisplay(self):
         """Initialize pygame display and clock."""
         pygame.display.set_caption("Pysweeper")
-        self.screen = pygame.display.set_mode((800, 600))
+        self.screen = pygame.display.set_mode((settings.WIDTH, settings.HEIGHT))
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.Font(None, 36)
+
+        try:
+            self.font = pygame.font.Font("Cascadia Mono.ttf", 36)
+        except (FileNotFoundError, IOError):
+            self.font = pygame.font.Font(None, 36)
+
+        self.hud = Hud(0, 0, settings.WIDTH, 60, onRestart=self.restartGame)
+        self.menu = Menu(onStartGame=self.startGame)
 
     def run(self):
         """Main game loop running at specified FPS."""
@@ -43,7 +56,11 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
 
+            if self.hud:
+                self.hud.handleEvent(event)
+
             if self.state == GameState.MENU:
+                self.menu.handleEvent(event)
                 self.handleMenuEvents(event)
             elif self.state == GameState.PLAYING:
                 self.handlePlayingEvents(event)
@@ -52,9 +69,9 @@ class Game:
 
     def handleMenuEvents(self, event):
         """Handle events in menu state."""
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left click
-                self.startGame(*Difficulty.MEDIUM)
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self.running = False
 
     def handlePlayingEvents(self, event):
         """Handle events during active gameplay."""
@@ -71,21 +88,34 @@ class Game:
 
     def handleMouseClick(self, event):
         """Process mouse clicks on the game board."""
-        if event.button == 1:  # Left click - reveal
-            pass  # Will integrate with UI
+        if not self.board:
+            return
 
-        elif event.button == 3:  # Right click - flag
-            pass  # Will integrate with UI
+        boardStartX = settings.BOARD_OFFSET_X
+        boardStartY = settings.BOARD_OFFSET_Y
+        tileSize = settings.TILE_SIZE
+
+        col = (event.pos[0] - boardStartX) // tileSize
+        row = (event.pos[1] - boardStartY) // tileSize
+
+        if 0 <= row < self.board.rows and 0 <= col < self.board.cols:
+            if event.button == 1:
+                self.board.revealTile(row, col)
+            elif event.button == 3:
+                self.board.toggleFlag(row, col)
 
     def startGame(self, rows, cols, mines):
         """Initialize a new game with specified difficulty."""
         self.board = Board(rows, cols, mines)
         self.state = GameState.PLAYING
+        self.startTime = pygame.time.get_ticks()
 
     def restartGame(self):
         """Restart the current game with same settings."""
         if self.board:
             self.startGame(self.board.rows, self.board.cols, self.board.mineCount)
+        else:
+            self.startGame(*Difficulty.MEDIUM)
 
     def switchState(self, newState):
         """Change the current game state."""
@@ -93,15 +123,20 @@ class Game:
 
     def update(self):
         """Update game state each frame."""
-        if self.state == GameState.PLAYING:
-            pass  # Update timer, animations, etc.
+        if self.state == GameState.PLAYING and self.board:
+            elapsed = (pygame.time.get_ticks() - self.startTime) // 1000
+            self.hud.setTimer(elapsed)
+            self.hud.setMineCount(self.board.mineCount - self.board.flagCount)
 
     def draw(self):
         """Render current game state to screen."""
-        self.screen.fill((192, 192, 192))  # Classic gray background
+        self.screen.fill(settings.COLORS["background"])
+
+        if self.hud:
+            self.hud.draw(self.screen)
 
         if self.state == GameState.MENU:
-            self.drawMenu()
+            self.menu.draw(self.screen)
         elif self.state == GameState.PLAYING:
             self.drawGame()
         elif self.state in (GameState.GAME_OVER, GameState.WIN):
@@ -109,16 +144,6 @@ class Game:
             self.drawEndGameOverlay()
 
         pygame.display.flip()
-
-    def drawMenu(self):
-        """Render main menu screen."""
-        title = self.font.render("PYSWEEPER", True, (0, 0, 128))
-        titleRect = title.get_rect(center=(400, 200))
-        self.screen.blit(title, titleRect)
-
-        instruction = self.font.render("Click to Start", True, (0, 0, 0))
-        instrRect = instruction.get_rect(center=(400, 300))
-        self.screen.blit(instruction, instrRect)
 
     def drawGame(self):
         """Render the game board."""
@@ -130,42 +155,60 @@ class Game:
     def drawTile(self, row, col):
         """Draw a single tile at grid position."""
         tile = self.board.getTile(row, col)
-        x = 100 + col * 40
-        y = 100 + row * 40
+        x = settings.BOARD_OFFSET_X + col * settings.TILE_SIZE
+        y = settings.BOARD_OFFSET_Y + row * settings.TILE_SIZE
+        size = settings.TILE_SIZE - 2
 
-        # Draw tile background
-        color = (128, 128, 128) if tile.isRevealed else (192, 192, 192)
-        pygame.draw.rect(self.screen, color, (x, y, 38, 38))
-        pygame.draw.rect(self.screen, (255, 255, 255), (x, y, 38, 38), 2)
-
-        # Draw content
         if tile.isRevealed:
+            pygame.draw.rect(self.screen, settings.COLORS["tile_revealed"], (x, y, size, size))
+            pygame.draw.rect(self.screen, settings.COLORS["tile_border_dark"], (x, y, size, size), 1)
+
             if tile.isMine:
-                text = self.font.render("M", True, (255, 0, 0))
-            elif tile.neighborCount > 0:
-                colors = {1: (0, 0, 255), 2: (0, 128, 0), 3: (255, 0, 0),
-                          4: (0, 0, 128), 5: (128, 0, 0), 6: (0, 128, 128),
-                          7: (0, 0, 0), 8: (128, 128, 128)}
-                text = self.font.render(str(tile.neighborCount), True, colors.get(tile.neighborCount, (0, 0, 0)))
-                textRect = text.get_rect(center=(x + 19, y + 19))
+                text = self.font.render("M", True, settings.COLORS["mine"])
+                textRect = text.get_rect(center=(x + size // 2, y + size // 2))
                 self.screen.blit(text, textRect)
-        elif tile.isFlagged:
-            text = self.font.render("F", True, (255, 0, 0))
-            textRect = text.get_rect(center=(x + 19, y + 19))
-            self.screen.blit(text, textRect)
+            elif tile.neighborCount > 0:
+                color = settings.NUMBER_COLORS.get(tile.neighborCount, settings.COLORS["text_primary"])
+                text = self.font.render(str(tile.neighborCount), True, color)
+                textRect = text.get_rect(center=(x + size // 2, y + size // 2))
+                self.screen.blit(text, textRect)
+        else:
+            pygame.draw.rect(self.screen, settings.COLORS["tile_unrevealed"], (x, y, size, size))
+
+            pygame.draw.line(self.screen, settings.COLORS["tile_border_light"],
+                           (x, y), (x + size, y), 2)
+            pygame.draw.line(self.screen, settings.COLORS["tile_border_light"],
+                           (x, y), (x, y + size), 2)
+
+            pygame.draw.line(self.screen, settings.COLORS["tile_border_dark"],
+                           (x, y + size), (x + size, y + size), 2)
+            pygame.draw.line(self.screen, settings.COLORS["tile_border_dark"],
+                           (x + size, y), (x + size, y + size), 2)
+
+            if tile.isFlagged:
+                text = self.font.render("F", True, settings.COLORS["flag"])
+                textRect = text.get_rect(center=(x + size // 2, y + size // 2))
+                self.screen.blit(text, textRect)
 
     def drawEndGameOverlay(self):
         """Draw game over or win message."""
-        overlay = pygame.Surface((300, 100))
-        overlay.fill((255, 255, 255))
-        overlay.set_alpha(200)
+        overlay = pygame.Surface((350, 120), pygame.SRCALPHA)
+        overlay.fill(settings.COLORS["overlay_background"])
+
+        pygame.draw.rect(overlay, settings.COLORS["overlay_border"],
+                        overlay.get_rect(), 2)
 
         msg = "GAME OVER" if self.state == GameState.GAME_OVER else "YOU WIN!"
-        color = (255, 0, 0) if self.state == GameState.GAME_OVER else (0, 128, 0)
+        color = settings.COLORS["lose"] if self.state == GameState.GAME_OVER else settings.COLORS["win"]
         text = self.font.render(msg, True, color)
 
-        self.screen.blit(overlay, (250, 250))
-        self.screen.blit(text, (340, 280))
+        textRect = text.get_rect(center=(overlay.get_width() // 2, 35))
+        overlay.blit(text, textRect)
 
-        restartText = self.font.render("Press R to Restart", True, (0, 0, 0))
-        self.screen.blit(restartText, (290, 320))
+        restartText = pygame.font.Font(None, 28).render("Press R to Restart", True, settings.COLORS["text_secondary"])
+        restartRect = restartText.get_rect(center=(overlay.get_width() // 2, 75))
+        overlay.blit(restartText, restartRect)
+
+        overlayX = (settings.WIDTH - overlay.get_width()) // 2
+        overlayY = (settings.HEIGHT - overlay.get_height()) // 2
+        self.screen.blit(overlay, (overlayX, overlayY))

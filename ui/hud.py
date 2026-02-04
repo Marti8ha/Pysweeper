@@ -1,7 +1,7 @@
 """Heads-up display showing game status, timer, and mine counter."""
 
-
 import pygame
+import settings
 
 
 class Hud:
@@ -12,15 +12,17 @@ class Hud:
         self.mineCount = 0
         self.timer = 0
         self.onRestart = onRestart
-        self.font = pygame.font.Font(None, 48)
-        self.smallFont = pygame.font.Font(None, 24)
-        self.restartButton = None
-        self.initRestartButton()
-
-    def initRestartButton(self):
-        """Create restart button in HUD."""
-        centerX = self.rect.centerx
-        self.restartButton = pygame.Rect(centerX - 25, self.rect.y + 10, 50, 40)
+        # Use monospace font for consistent number display
+        try:
+            self.font = pygame.font.Font("Cascadia Mono.ttf", 42)
+        except (FileNotFoundError, IOError):
+            self.font = pygame.font.Font(None, 42)
+        self.smallFont = pygame.font.Font(None, 20)
+        self.restartButtonY = y + 10
+        self.restartButton = pygame.Rect(x + width // 2 - 25, self.restartButtonY, 50, 40)
+        
+        # Animation state
+        self.buttonHovered = False
 
     def setMineCount(self, count):
         """Update displayed mine count."""
@@ -36,30 +38,37 @@ class Hud:
             if event.button == 1 and self.restartButton.collidepoint(event.pos):
                 if self.onRestart:
                     self.onRestart()
+        elif event.type == pygame.MOUSEMOTION:
+            self.buttonHovered = self.restartButton.collidepoint(event.pos)
 
     def draw(self, surface):
-        """Render HUD to screen."""
-        # Background
-        pygame.draw.rect(surface, (128, 128, 128), self.rect)
-        pygame.draw.rect(surface, (255, 255, 255), self.rect, 2)
+        """Render HUD to screen with dark theme."""
+        # Dark HUD background
+        pygame.draw.rect(surface, settings.COLORS["hud_background"], self.rect)
+        
+        # Subtle top border accent
+        pygame.draw.rect(surface, settings.COLORS["accent"], (self.rect.x, self.rect.y, self.rect.width, 2))
 
-        # Left side - Mine counter
-        mineText = self.font.render(str(self.mineCount).zfill(3), True, (255, 0, 0))
-        surface.blit(mineText, (self.rect.x + 20, self.rect.y + 15))
+        # Mine counter - bright color for visibility
+        mineText = self.font.render(str(self.mineCount).zfill(3), True, settings.COLORS["flag"])
+        surface.blit(mineText, (self.rect.x + 20, self.rect.y + 8))
 
-        # Center - Restart button (smiley face)
-        pygame.draw.rect(surface, (192, 192, 192), self.restartButton)
-        pygame.draw.rect(surface, (255, 255, 255), self.restartButton, 2)
+        # Restart button with modern styling
+        btnColor = settings.COLORS["button_pressed"] if self.buttonHovered else settings.COLORS["button_background"]
+        pygame.draw.rect(surface, btnColor, self.restartButton)
+        pygame.draw.rect(surface, settings.COLORS["accent"], self.restartButton, 2)
 
-        smiley = self.smallFont.render(":-)", True, (0, 0, 0))
+        # Smiley face with color
+        smileyColor = settings.COLORS["accent"] if self.buttonHovered else settings.COLORS["text_secondary"]
+        smiley = self.smallFont.render(":-)", True, smileyColor)
         smileyRect = smiley.get_rect(center=self.restartButton.center)
         surface.blit(smiley, smileyRect)
 
-        # Right side - Timer
+        # Timer - bright color
         minutes = self.timer // 60
         seconds = self.timer % 60
-        timerText = self.font.render(f"{minutes:02}:{seconds:02}", True, (255, 0, 0))
-        surface.blit(timerText, (self.rect.right - 100, self.rect.y + 15))
+        timerText = self.font.render(f"{minutes:02}:{seconds:02}", True, settings.COLORS["accent"])
+        surface.blit(timerText, (self.rect.right - 110, self.rect.y + 8))
 
     def reset(self):
         """Reset HUD to initial state."""

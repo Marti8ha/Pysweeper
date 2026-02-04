@@ -7,6 +7,9 @@ A clean, professional Minesweeper clone built with Pygame.
 - **Three difficulty levels**: Easy (9×9), Medium (16×16), Hard (16×30)
 - **Classic gameplay**: Left-click to reveal, right-click to flag
 - **First-move guarantee**: Never lose on your first click
+- **Modern dark theme**: Sleek black/grey color palette
+- **Cascadia Mono font**: Clean monospace typography
+- **Smooth animations**: Hover effects and visual feedback
 - **Professional architecture**: Clean separation of concerns
 - **Comprehensive documentation**: Full API reference and gameplay guide
 
@@ -20,12 +23,19 @@ pip install -r requirements.txt
 python main.py
 ```
 
+## Visual Design
+
+- **Theme**: Dark modern aesthetic with black background
+- **Font**: Cascadia Mono (monospace)
+- **Colors**: Neon accent colors on dark surfaces
+- **Effects**: Subtle hover states and smooth transitions
+
 ## Project Structure
 
 ```
 pysweeper/
 ├── main.py              # Entry point
-├── settings.py          # Configuration
+├── settings.py          # Configuration & colors
 ├── requirements.txt     # Dependencies
 ├── core/                # Game logic
 │   ├── game.py         # Main controller
@@ -54,6 +64,7 @@ pysweeper/
 - **Right Click**: Flag/Unflag tile
 - **R**: Restart game
 - **ESC**: Return to menu
+- **Click Difficulty**: Start new game with selected difficulty
 
 ## Architecture Highlights
 
@@ -61,11 +72,16 @@ pysweeper/
 - **State machine**: Clean transitions between menu/playing/game over/win
 - **Event delegation**: Input handling scales with new features
 - **Testability**: Board logic can be tested without pygame
+- **Configurable theme**: All colors defined in settings.py
 
 ## Requirements
 
 - Python 3.12+
 - Pygame 2.6.1+
+
+## Optional
+
+- Cascadia Mono font file (falls back to system default if not found)
 
 ## License
 

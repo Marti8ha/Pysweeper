@@ -29,15 +29,15 @@ class Board:
 
     def placeMines(self, excludeRow, excludeCol):
         """Randomly place mines avoiding the first clicked tile."""
-        safeZone = {excludeRow, excludeRow - 1, excludeRow + 1}
-        safeColZone = {excludeCol, excludeCol - 1, excludeCol + 1}
+        safeRowZone = {excludeRow - 1, excludeRow, excludeRow + 1}
+        safeColZone = {excludeCol - 1, excludeCol, excludeCol + 1}
 
         minesPlaced = 0
         while minesPlaced < self.mineCount:
             r = random.randint(0, self.rows - 1)
             c = random.randint(0, self.cols - 1)
 
-            if (r in safeZone or r in safeColZone) and (c in safeColZone or c in safeZone):
+            if r in safeRowZone and c in safeColZone:
                 continue
 
             if not self.tiles[r][c].isMine:

@@ -1,9 +1,9 @@
 """Main menu screen with difficulty selection and game start options."""
 
-
 import pygame
 from .button import Button
-from ..core.state import Difficulty
+from core.state import Difficulty
+import settings
 
 
 class Menu:
@@ -11,15 +11,22 @@ class Menu:
 
     def __init__(self, onStartGame=None):
         self.onStartGame = onStartGame
-        self.font = pygame.font.Font(None, 72)
-        self.smallFont = pygame.font.Font(None, 36)
+        # Try to use Cascadia Mono or default font
+        try:
+            self.font = pygame.font.Font("Cascadia Mono.ttf", 64)
+        except (FileNotFoundError, IOError):
+            self.font = pygame.font.Font(None, 64)
+        try:
+            self.smallFont = pygame.font.Font("Cascadia Mono.ttf", 32)
+        except (FileNotFoundError, IOError):
+            self.smallFont = pygame.font.Font(None, 32)
         self.buttons = []
         self.initButtons()
 
     def initButtons(self):
         """Create menu buttons for difficulty selection."""
         centerX = 400
-        startY = 250
+        startY = 280
 
         # Easy button
         self.buttons.append(Button(
@@ -53,22 +60,25 @@ class Menu:
             button.handleEvent(event)
 
     def draw(self, surface):
-        """Render menu to screen."""
-        surface.fill((192, 192, 192))
+        """Render menu to screen with dark theme."""
+        surface.fill(settings.COLORS["background"])
 
-        # Title
-        title = self.font.render("PYSWEEPER", True, (0, 0, 128))
-        titleRect = title.get_rect(center=(400, 150))
+        # Decorative line
+        pygame.draw.line(surface, settings.COLORS["accent"], (200, 100), (600, 100), 2)
+
+        # Title with accent color
+        title = self.font.render("PYSWEEPER", True, settings.COLORS["accent"])
+        titleRect = title.get_rect(center=(400, 160))
         surface.blit(title, titleRect)
 
         # Subtitle
-        subtitle = self.smallFont.render("Minesweeper Clone", True, (64, 64, 64))
-        subRect = subtitle.get_rect(center=(400, 190))
+        subtitle = self.smallFont.render("Minesweeper Clone", True, settings.COLORS["text_secondary"])
+        subRect = subtitle.get_rect(center=(400, 210))
         surface.blit(subtitle, subRect)
 
         # Instructions
-        instruction = self.smallFont.render("Select Difficulty:", True, (0, 0, 0))
-        instrRect = instruction.get_rect(center=(400, 220))
+        instruction = self.smallFont.render("Select Difficulty:", True, settings.COLORS["text_secondary"])
+        instrRect = instruction.get_rect(center=(400, 250))
         surface.blit(instruction, instrRect)
 
         # Draw buttons
@@ -78,7 +88,7 @@ class Menu:
     def updateButtonPositions(self, screenWidth, screenHeight):
         """Recalculate button positions for new screen size."""
         centerX = screenWidth // 2
-        startY = 250
+        startY = 280
         positions = [(centerX - 100, startY), (centerX - 100, startY + 70), (centerX - 100, startY + 140)]
 
         for button, pos in zip(self.buttons, positions):
