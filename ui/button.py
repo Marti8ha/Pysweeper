@@ -13,9 +13,9 @@ class Button:
         self.onClick = onClick
         self.isHovered = False
         self.isPressed = False
-        # Try to use Cascadia Mono or monospace font
+        # Try to use Cascadia Mono Bold or monospace font
         try:
-            self.font = pygame.font.Font("Cascadia Mono.ttf", 28)
+            self.font = pygame.font.Font("CascadiaMono-Bold.ttf", 28)
         except (FileNotFoundError, IOError):
             self.font = pygame.font.Font(None, 28)
         

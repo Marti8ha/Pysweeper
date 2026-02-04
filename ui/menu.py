@@ -9,22 +9,29 @@ import settings
 class Menu:
     """Start screen with game title and difficulty selection."""
 
-    def __init__(self, onStartGame=None):
+    def __init__(self, onStartGame=None, onShowLeaderboard=None):
+        """Initialize the menu.
+
+        Args:
+            onStartGame: Callback to start game with (rows, cols, mines).
+            onShowLeaderboard: Optional callback to show leaderboard.
+        """
         self.onStartGame = onStartGame
-        # Try to use Cascadia Mono or default font
+        self.onShowLeaderboard = onShowLeaderboard
+        # Try to use Cascadia Mono Bold or default font
         try:
-            self.font = pygame.font.Font("Cascadia Mono.ttf", 64)
+            self.font = pygame.font.Font("CascadiaMono-Bold.ttf", 64)
         except (FileNotFoundError, IOError):
             self.font = pygame.font.Font(None, 64)
         try:
-            self.smallFont = pygame.font.Font("Cascadia Mono.ttf", 32)
+            self.smallFont = pygame.font.Font("CascadiaMono-Bold.ttf", 32)
         except (FileNotFoundError, IOError):
             self.smallFont = pygame.font.Font(None, 32)
         self.buttons = []
         self.initButtons()
 
     def initButtons(self):
-        """Create menu buttons for difficulty selection."""
+        """Create menu buttons for difficulty selection and leaderboard."""
         centerX = 400
         startY = 280
 
@@ -49,10 +56,22 @@ class Menu:
             lambda: self.startGame(*Difficulty.HARD)
         ))
 
+        # Leaderboard button
+        self.buttons.append(Button(
+            centerX - 100, startY + 210, 200, 50,
+            "Leaderboard",
+            self._showLeaderboard
+        ))
+
     def startGame(self, rows, cols, mines):
         """Callback to start game with selected difficulty."""
         if self.onStartGame:
             self.onStartGame(rows, cols, mines)
+
+    def _showLeaderboard(self):
+        """Callback to show leaderboard screen."""
+        if self.onShowLeaderboard:
+            self.onShowLeaderboard()
 
     def handleEvent(self, event):
         """Process events for all menu buttons."""
@@ -71,11 +90,6 @@ class Menu:
         titleRect = title.get_rect(center=(400, 160))
         surface.blit(title, titleRect)
 
-        # Subtitle
-        subtitle = self.smallFont.render("Minesweeper Clone", True, settings.COLORS["text_secondary"])
-        subRect = subtitle.get_rect(center=(400, 210))
-        surface.blit(subtitle, subRect)
-
         # Instructions
         instruction = self.smallFont.render("Select Difficulty:", True, settings.COLORS["text_secondary"])
         instrRect = instruction.get_rect(center=(400, 250))
@@ -89,7 +103,12 @@ class Menu:
         """Recalculate button positions for new screen size."""
         centerX = screenWidth // 2
         startY = 280
-        positions = [(centerX - 100, startY), (centerX - 100, startY + 70), (centerX - 100, startY + 140)]
+        positions = [
+            (centerX - 100, startY),
+            (centerX - 100, startY + 70),
+            (centerX - 100, startY + 140),
+            (centerX - 100, startY + 210),
+        ]
 
         for button, pos in zip(self.buttons, positions):
             button.setPosition(*pos)

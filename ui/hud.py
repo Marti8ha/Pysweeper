@@ -14,7 +14,7 @@ class Hud:
         self.onRestart = onRestart
         # Use monospace font for consistent number display
         try:
-            self.font = pygame.font.Font("Cascadia Mono.ttf", 42)
+            self.font = pygame.font.Font("CascadiaMono-Bold.ttf", 42)
         except (FileNotFoundError, IOError):
             self.font = pygame.font.Font(None, 42)
         self.smallFont = pygame.font.Font(None, 20)

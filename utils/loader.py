@@ -1,23 +1,25 @@
 """Asset loader for images, fonts, and sounds with caching."""
 
-
 import pygame
+from utils.assets import AssetGenerator
 
 
 class AssetLoader:
     """Centralized asset management with lazy loading and caching."""
 
-    def __init__(self):
+    def __init__(self, tile_size: int = 36):
         self.images = {}
-        self.fonts = {}
+        self.fonts = {};
         self.sounds = {}
         self.basePath = "assets/"
+        # Initialize asset generator for programmatic assets
+        self.asset_generator = AssetGenerator(tile_size)
 
     def loadImage(self, path, key=None):
         """Load and cache an image file.
 
         Args:
-            path: relative path from assets/images/
+            path: relative path from assets/images/ OR special key like "flag", "mine"
             key: optional cache key (defaults to path)
 
         Returns:
@@ -25,12 +27,28 @@ class AssetLoader:
         """
         key = key or path
         if key not in self.images:
-            fullPath = self.basePath + "images/" + path
-            try:
-                self.images[key] = pygame.image.load(fullPath).convert_alpha()
-            except pygame.error:
-                self.images[key] = self.createPlaceholderSurface(32, 32)
+            # Check for special generated assets first
+            if key in ["unrevealed", "revealed", "flag", "mine", "mine_exploded",
+                       "wrong_flag", "restart_normal", "restart_dead", "restart_win"]:
+                self.images[key] = self.asset_generator.get(key)
+            elif any(key.startswith(prefix) for prefix in ["revealed_", "digit_"]):
+                self.images[key] = self.asset_generator.get(key)
+            else:
+                # Try to load from file, fall back to generated asset
+                fullPath = self.basePath + "images/" + path
+                try:
+                    self.images[key] = pygame.image.load(fullPath).convert_alpha()
+                except pygame.error:
+                    # Fall back to generated asset based on key
+                    self.images[key] = self._generate_fallback(key)
         return self.images[key]
+
+    def _generate_fallback(self, key: str) -> pygame.Surface:
+        """Generate fallback asset when file not found."""
+        try:
+            return self.asset_generator.get(key)
+        except ValueError:
+            return self.asset_generator.createPlaceholderSurface(32, 32)
 
     def loadFont(self, name, size, key=None):
         """Load and cache a font.

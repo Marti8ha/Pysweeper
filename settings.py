@@ -7,8 +7,69 @@ COLS = 16
 MINES = 40
 
 TILE_SIZE = 36
-BOARD_OFFSET_X = 52
-BOARD_OFFSET_Y = 80
+HUD_HEIGHT = 60
+BOARD_PADDING = 20
+
+# Dynamic window dimensions by difficulty (width, height)
+DIFFICULTY_WINDOWS = {
+    "easy": (450, 450),      # 9x9 board
+    "medium": (650, 700),    # 16x16 board
+    "hard": (1150, 750),     # 16x30 board
+}
+
+# Tile sizes optimized for each difficulty
+DIFFICULTY_TILE_SIZES = {
+    "easy": 42,      # Larger tiles for small board
+    "medium": 36,   # Standard tile size
+    "hard": 36,      # Standard tile size for wide board
+}
+
+# Board offset - calculated dynamically in code
+BOARD_OFFSET_X = BOARD_PADDING
+BOARD_OFFSET_Y = BOARD_PADDING + HUD_HEIGHT
+
+
+def get_window_dimensions(rows, cols):
+    """Calculate optimal window dimensions based on board size."""
+    # Determine difficulty based on board dimensions
+    if rows == 9 and cols == 9:
+        difficulty = "easy"
+    elif rows == 16 and cols == 16:
+        difficulty = "medium"
+    elif rows == 16 and cols == 30:
+        difficulty = "hard"
+    else:
+        # Fallback calculation for custom sizes
+        base_width, base_height = DIFFICULTY_WINDOWS["medium"]
+        return base_width, base_height
+
+    return DIFFICULTY_WINDOWS[difficulty]
+
+
+def get_tile_size(rows, cols):
+    """Get optimal tile size based on board dimensions."""
+    if rows == 9 and cols == 9:
+        return DIFFICULTY_TILE_SIZES["easy"]
+    elif rows == 16 and cols == 16:
+        return DIFFICULTY_TILE_SIZES["medium"]
+    elif rows == 16 and cols == 30:
+        return DIFFICULTY_TILE_SIZES["hard"]
+    return DIFFICULTY_TILE_SIZES["medium"]
+
+
+def calculate_board_offset(width, height, rows, cols, tile_size):
+    """Calculate board offset to center it in available space below HUD."""
+    board_width = cols * tile_size
+    board_height = rows * tile_size
+
+    # Center horizontally
+    offset_x = (width - board_width) // 2
+
+    # Center vertically in space below HUD
+    available_height = height - HUD_HEIGHT - BOARD_PADDING
+    offset_y = HUD_HEIGHT + BOARD_PADDING + (available_height - board_height) // 2
+
+    return offset_x, offset_y
 
 # Dark Theme Color Palette
 COLORS = {
@@ -33,9 +94,9 @@ COLORS = {
     "hud_border": (50, 50, 50),
     
     # Accent colors
-    "accent": (100, 200, 255),
-    "accent_hover": (120, 220, 255),
-    "accent_pressed": (80, 180, 230),
+    "accent": (255, 215, 0),          # Yellow (#FFD700)
+    "accent_hover": (255, 230, 80),
+    "accent_pressed": (220, 190, 0),
     
     # Button colors
     "button_background": (50, 50, 50),
@@ -78,3 +139,10 @@ NUMBER_COLORS = {
     7: COLORS["number_7"],
     8: COLORS["number_8"],
 }
+
+# Scoring Constants
+POINTS_BASE_PER_TILE = 10
+POINTS_NO_HINTS_MULTIPLIER = 2.0
+POINTS_TIME_BONUS_MAX = 1000
+POINTS_NO_FLAGS_BONUS = 500
+LEADERBOARD_MAX_ENTRIES = 10
