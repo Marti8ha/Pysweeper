@@ -1,0 +1,29 @@
+{
+  "id": "pysweeper-modern-ui-05",
+  "seq": "05",
+  "title": "Modernize game over overlay",
+  "status": "in_progress",
+  "agent_id": "coder-agent",
+  "started_at": "2026-02-04T00:00:00Z",
+  "depends_on": ["01"],
+  "parallel": false,
+  "suggested_agent": "OpenFrontendSpecialist",
+  "context_files": [
+    "/home/marti8ha/.config/opencode/context/core/standards/code-quality.md"
+  ],
+  "reference_files": [
+    "/home/marti8ha/repos/Pysweeper/settings.py",
+    "/home/marti8ha/repos/Pysweeper/core/game.py"
+  ],
+  "acceptance_criteria": [
+    "Overlay container uses pygame.draw.rect with border_radius=8",
+    "Semi-transparent background with modern blur effect if possible",
+    "Win/lose message prominently displayed with Cascadia Mono",
+    "Action buttons (restart, menu) styled consistently with other buttons",
+    "Overlay animation smooth and polished",
+    "Overlay does not obstruct game board visibility excessively"
+  ],
+  "deliverables": [
+    "/home/marti8ha/repos/Pysweeper/core/game.py (modified drawEndGameOverlay method)"
+  ]
+}

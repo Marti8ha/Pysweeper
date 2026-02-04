@@ -28,21 +28,30 @@ class Board:
             self.tiles.append(row)
 
     def placeMines(self, excludeRow, excludeCol):
-        """Randomly place mines avoiding the first clicked tile."""
-        safeRowZone = {excludeRow - 1, excludeRow, excludeRow + 1}
-        safeColZone = {excludeCol - 1, excludeCol, excludeCol + 1}
+        """Randomly place mines avoiding the first clicked tile and its neighbors."""
+        # Create a set of safe positions (first click + all 8 neighbors)
+        safePositions = set()
+        for dr in (-1, 0, 1):
+            for dc in (-1, 0, 1):
+                r, c = excludeRow + dr, excludeCol + dc
+                if self.isValid(r, c):
+                    safePositions.add((r, c))
 
-        minesPlaced = 0
-        while minesPlaced < self.mineCount:
-            r = random.randint(0, self.rows - 1)
-            c = random.randint(0, self.cols - 1)
+        # Get all available positions excluding safe zone
+        availablePositions = []
+        for r in range(self.rows):
+            for c in range(self.cols):
+                if (r, c) not in safePositions:
+                    availablePositions.append((r, c))
 
-            if r in safeRowZone and c in safeColZone:
-                continue
+        # Validate that we have enough space for all mines
+        if len(availablePositions) < self.mineCount:
+            raise ValueError(f"Cannot place {self.mineCount} mines on {self.rows}x{self.cols} board with safe zone")
 
-            if not self.tiles[r][c].isMine:
-                self.tiles[r][c].isMine = True
-                minesPlaced += 1
+        # Randomly sample positions for mines
+        minePositions = random.sample(availablePositions, self.mineCount)
+        for r, c in minePositions:
+            self.tiles[r][c].isMine = True
 
         self.calculateAllNeighbors()
 

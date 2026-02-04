@@ -1,0 +1,27 @@
+{
+  "id": "pysweeper-modern-ui-02",
+  "seq": "02",
+  "title": "Modernize buttons",
+  "status": "pending",
+  "depends_on": [],
+  "parallel": true,
+  "suggested_agent": "OpenFrontendSpecialist",
+  "context_files": [
+    "/home/marti8ha/.config/opencode/context/core/standards/code-quality.md"
+  ],
+  "reference_files": [
+    "/home/marti8ha/repos/Pysweeper/settings.py",
+    "/home/marti8ha/repos/Pysweeper/ui/button.py"
+  ],
+  "acceptance_criteria": [
+    "Buttons use pygame.draw.rect with border_radius=8 for rounded corners",
+    "Enhanced shadow effects using draw.ellipse or layered rects",
+    "Smooth hover state transitions with color interpolation",
+    "Active/pressed state with visual feedback",
+    "Consistent padding and sizing across all buttons",
+    "Yellow accent color (#FFD700) used appropriately"
+  ],
+  "deliverables": [
+    "/home/marti8ha/repos/Pysweeper/ui/button.py (modified Button class)"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "id": "pysweeper-modern-ui-06",
+  "seq": "06",
+  "title": "Modernize HUD restart button",
+  "status": "completed",
+  "agent_id": "coder-agent",
+  "started_at": "2026-02-04T00:00:00Z",
+  "completed_at": "2026-02-04T00:15:00Z",
+  "depends_on": ["02"],
+  "parallel": false,
+  "suggested_agent": "OpenFrontendSpecialist",
+  "context_files": [
+    "/home/marti8ha/.config/opencode/context/core/standards/code-quality.md"
+  ],
+  "reference_files": [
+    "/home/marti8ha/repos/Pysweeper/settings.py",
+    "/home/marti8ha/repos/Pysweeper/ui/hud.py",
+    "/home/marti8ha/repos/Pysweeper/ui/button.py"
+  ],
+  "acceptance_criteria": [
+    "Restart button uses modern Button class with rounded corners",
+    "Button size appropriate for HUD bar height",
+    "Timer and mine counter styling consistent with new design",
+    "Visual spacing between HUD elements improved",
+    "Button hover/active states work correctly in HUD context",
+    "HUD bar maintains dark theme aesthetic"
+  ],
+  "deliverables": [
+    "/home/marti8ha/repos/Pysweeper/ui/hud.py (modified HUD rendering)"
+  ]
+}

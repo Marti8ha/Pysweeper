@@ -3,11 +3,12 @@
 import pygame
 from .button import Button
 from core.state import Difficulty
+from ui.pixel_utils import draw_pixel_text
 import settings
 
 
 class LeaderboardUI:
-    """Screen displaying the top 10 scores with dark theme styling."""
+    """Screen displaying the top 10 scores with pixel art styling."""
 
     def __init__(self, storage, onBack=None):
         """Initialize the leaderboard screen.
@@ -18,30 +19,28 @@ class LeaderboardUI:
         """
         self.storage = storage
         self.onBack = onBack
-
-        # Try to use Cascadia Mono or default font
-        try:
-            self.titleFont = pygame.font.Font("Cascadia Mono.ttf", 48)
-            self.headerFont = pygame.font.Font("Cascadia Mono.ttf", 24)
-            self.font = pygame.font.Font("Cascadia Mono.ttf", 20)
-        except (FileNotFoundError, IOError):
-            self.titleFont = pygame.font.Font(None, 48)
-            self.headerFont = pygame.font.Font(None, 24)
-            self.font = pygame.font.Font(None, 20)
-
         self.buttons = []
         self.initButtons()
 
     def initButtons(self):
         """Create navigation buttons."""
-        centerX = settings.WIDTH // 2
+        self._createButtons(settings.WIDTH, settings.HEIGHT)
+    
+    def _createButtons(self, screen_width, screen_height):
+        """Create buttons with proper sizing for current screen."""
+        self.buttons = []
+        center_x = screen_width // 2
 
-        # Back button
+        # Back button - auto-sized
         self.buttons.append(Button(
-            centerX - 80, settings.HEIGHT - 80, 160, 50,
+            center_x, screen_height - 80, 0, 0,  # Auto-size
             "Back",
             self._onBackClicked
         ))
+        
+        # Center the button
+        for button in self.buttons:
+            button.rect.x = center_x - button.rect.width // 2
 
     def _onBackClicked(self):
         """Handle back button click."""
@@ -54,91 +53,137 @@ class LeaderboardUI:
             button.handleEvent(event)
 
     def draw(self, surface):
-        """Render leaderboard to screen.
+        """Render leaderboard to screen with pixel art style.
 
         Args:
             surface: Pygame surface to draw on.
         """
+        from ui.pixel_utils import get_pixel_text_width
+
+        # Get current dimensions
+        screen_width = surface.get_width()
+        screen_height = surface.get_height()
+
+        # Recreate buttons if needed
+        if not self.buttons:
+            self._createButtons(screen_width, screen_height)
+
         surface.fill(settings.COLORS["background"])
 
-        # Decorative line
-        pygame.draw.line(surface, settings.COLORS["accent"], (200, 100), (600, 100), 2)
+        # Title with pixel art text - centered
+        title_text = "LEADERBOARD"
+        title_width = get_pixel_text_width(title_text, size='large')
+        title_x = (screen_width - title_width) // 2
+        title_y = min(80, screen_height // 10)
+        draw_pixel_text(surface, title_text, title_x, title_y, settings.COLORS["accent"], size='large')
 
-        # Title
-        title = self.titleFont.render("LEADERBOARD", True, settings.COLORS["accent"])
-        titleRect = title.get_rect(center=(settings.WIDTH // 2, 160))
-        surface.blit(title, titleRect)
+        # Update button positions
+        self.updateButtonPositions(screen_width, screen_height)
 
         # Load and display scores
         scores = self.storage.getTopScores()
-        self._drawScoreList(surface, scores)
+        self._drawScoreList(surface, scores, screen_width, screen_height)
 
         # Draw buttons
         for button in self.buttons:
             button.draw(surface)
 
-    def _drawScoreList(self, surface, scores):
-        """Draw the list of top scores.
+    def _drawScoreList(self, surface, scores, screen_width=None, screen_height=None):
+        """Draw the list of top scores with pixel art styling.
 
         Args:
             surface: Pygame surface to draw on.
             scores: List of score dictionaries.
+            screen_width: Current screen width (optional).
+            screen_height: Current screen height (optional).
         """
+        from ui.pixel_utils import get_pixel_text_width
+        
+        if screen_width is None:
+            screen_width = settings.WIDTH
+        if screen_height is None:
+            screen_height = settings.HEIGHT
+            
         if not scores:
             # No scores yet message
-            noScoresText = self.headerFont.render(
-                "No scores yet! Complete a game to see your name here.",
-                True, settings.COLORS["text_secondary"]
-            )
-            noScoresRect = noScoresText.get_rect(
-                center=(settings.WIDTH // 2, settings.HEIGHT // 2)
-            )
-            surface.blit(noScoresText, noScoresRect)
+            no_scores_text = "No scores yet!"
+            text_width = get_pixel_text_width(no_scores_text, size='medium')
+            draw_pixel_text(surface, no_scores_text, (screen_width - text_width) // 2,
+                           screen_height // 2 - 25, settings.COLORS["text_primary"], size='medium')
+
+            hint_text = "Complete a game to see your name here."
+            hint_width = get_pixel_text_width(hint_text, size='medium')
+            draw_pixel_text(surface, hint_text, (screen_width - hint_width) // 2,
+                           screen_height // 2 + 15, settings.COLORS["text_secondary"], size='medium')
             return
 
+        # Draw simple table container
+        container_margin = min(40, screen_width // 16)
+        container_width = screen_width - 2 * container_margin
+        container_height = min(380, screen_height - 220)
+        container_y = min(140, screen_height // 4)
+        containerRect = pygame.Rect(container_margin, container_y, container_width, container_height)
+        pygame.draw.rect(
+            surface,
+            settings.COLORS["background_alt"],
+            containerRect
+        )
+        pygame.draw.rect(
+            surface,
+            settings.COLORS["button_border"],
+            containerRect,
+            1
+        )
+
         # Header row
-        headerY = 230
-        self._drawTableHeader(surface, headerY)
+        headerY = container_y + 20
+        self._drawTableHeader(surface, headerY, container_margin, container_width)
 
         # Score rows
-        rowY = headerY + 40
+        rowY = headerY + 50
         for i, score in enumerate(scores):
-            self._drawScoreRow(surface, i + 1, score, rowY)
+            self._drawScoreRow(surface, i + 1, score, rowY, container_margin, container_width)
             rowY += 35
+            # Stop if we're running out of space
+            if rowY > container_y + container_height - 30:
+                break
 
-    def _drawTableHeader(self, surface, y):
+    def _drawTableHeader(self, surface, y, container_margin, container_width):
         """Draw column headers for the score table.
 
         Args:
             surface: Pygame surface to draw on.
             y: Vertical position for the header.
+            container_margin: Left margin of container.
+            container_width: Width of container.
         """
-        # Column positions
-        rankX = 100
-        scoreX = 250
-        diffX = 380
-        timeX = 520
-        dateX = 620
+        # Calculate column positions proportionally
+        rankX = container_margin + 15
+        scoreX = container_margin + container_width * 0.25
+        diffX = container_margin + container_width * 0.45
+        timeX = container_margin + container_width * 0.65
+        dateX = container_margin + container_width * 0.80
+
+        # Simple header background
+        headerRect = pygame.Rect(container_margin + 5, y - 8, container_width - 10, 40)
+        pygame.draw.rect(
+            surface,
+            settings.COLORS["hud_background"],
+            headerRect
+        )
 
         headers = [
             ("Rank", rankX),
             ("Score", scoreX),
-            ("Difficulty", diffX),
+            ("Diff", diffX),
             ("Time", timeX),
             ("Date", dateX),
         ]
 
         for text, x in headers:
-            textSurf = self.headerFont.render(text, True, settings.COLORS["accent"])
-            surface.blit(textSurf, (x, y))
+            draw_pixel_text(surface, text, int(x), y, settings.COLORS["accent"], size='small')
 
-        # Underline
-        pygame.draw.line(
-            surface, settings.COLORS["button_border"],
-            (80, y + 30), (720, y + 30), 1
-        )
-
-    def _drawScoreRow(self, surface, rank, score, y):
+    def _drawScoreRow(self, surface, rank, score, y, container_margin, container_width):
         """Draw a single score row.
 
         Args:
@@ -146,49 +191,48 @@ class LeaderboardUI:
             rank: Position in leaderboard (1-indexed).
             score: Score dictionary with keys: score, difficulty, date, time_elapsed.
             y: Vertical position for the row.
+            container_margin: Left margin of container.
+            container_width: Width of container.
         """
-        # Column positions
-        rankX = 100
-        scoreX = 250
-        diffX = 380
-        timeX = 520
-        dateX = 620
+        # Calculate column positions proportionally
+        rankX = container_margin + 15
+        scoreX = container_margin + container_width * 0.25
+        diffX = container_margin + container_width * 0.45
+        timeX = container_margin + container_width * 0.65
+        dateX = container_margin + container_width * 0.80
 
-        # Highlight top 3 ranks
-        if rank <= 3:
-            color = settings.COLORS["accent"]
+        # Highlight top 3 ranks with medal colors
+        if rank == 1:
+            color = settings.COLORS["accent"]  # Gold
+        elif rank == 2:
+            color = (192, 192, 192)  # Silver
+        elif rank == 3:
+            color = (205, 127, 50)   # Bronze
         else:
             color = settings.COLORS["text_primary"]
 
-        # Rank (with medal emoji effect via colors)
-        rankText = self.font.render(f"#{rank:2}", True, color)
-        surface.blit(rankText, (rankX, y))
+        rankLabel = f"#{rank:2}"
+
+        # Rank (with medal colors for top 3)
+        draw_pixel_text(surface, rankLabel, int(rankX), y, color, size='small')
 
         # Score
         scoreValue = score.get("score", 0)
-        scoreText = self.font.render(f"{scoreValue:,}", True, settings.COLORS["text_primary"])
-        surface.blit(scoreText, (scoreX, y))
+        draw_pixel_text(surface, f"{scoreValue:,}", int(scoreX), y, settings.COLORS["text_primary"], size='small')
 
-        # Difficulty
-        diffText = self.font.render(score.get("difficulty", "Unknown"), True, settings.COLORS["text_secondary"])
-        surface.blit(diffText, (diffX, y))
+        # Difficulty (truncate if needed for small screens)
+        diff_text = score.get("difficulty", "Unknown")[:8]  # Truncate to 8 chars
+        draw_pixel_text(surface, diff_text, int(diffX), y, settings.COLORS["text_secondary"], size='small')
 
         # Time (format as MM:SS)
         timeElapsed = score.get("time_elapsed", 0)
         minutes = timeElapsed // 60
         seconds = timeElapsed % 60
-        timeText = self.font.render(f"{minutes:02}:{seconds:02}", True, settings.COLORS["text_secondary"])
-        surface.blit(timeText, (timeX, y))
+        draw_pixel_text(surface, f"{minutes:02}:{seconds:02}", int(timeX), y, settings.COLORS["text_secondary"], size='small')
 
-        # Date
-        dateText = self.font.render(score.get("date", ""), True, settings.COLORS["text_secondary"])
-        surface.blit(dateText, (dateX, y))
-
-        # Subtle separator line
-        pygame.draw.line(
-            surface, settings.COLORS["tile_border_dark"],
-            (80, y + 28), (720, y + 28), 1
-        )
+        # Date (show first 10 chars to fit)
+        date_text = score.get("date", "")[:10]
+        draw_pixel_text(surface, date_text, int(dateX), y, settings.COLORS["text_secondary"], size='small')
 
     def refresh(self):
         """Reload scores from storage."""
@@ -196,9 +240,10 @@ class LeaderboardUI:
 
     def updateButtonPositions(self, screenWidth, screenHeight):
         """Recalculate button positions for new screen size."""
-        centerX = screenWidth // 2
+        center_x = screenWidth // 2
 
         for button in self.buttons:
             if button.text == "Back":
-                button.setPosition(centerX - 80, screenHeight - 80)
+                button.rect.x = center_x - button.rect.width // 2
+                button.rect.y = screenHeight - 80
                 break

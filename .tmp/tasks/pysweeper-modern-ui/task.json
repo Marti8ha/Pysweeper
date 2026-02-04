@@ -1,0 +1,29 @@
+{
+  "id": "pysweeper-modern-ui",
+  "name": "Modernize Pysweeper UI",
+  "status": "active",
+  "objective": "Modernize Pysweeper UI with rounded corners, modern styling, and enhanced visual effects across all components",
+  "context_files": [
+    "/home/marti8ha/.config/opencode/context/core/standards/code-quality.md"
+  ],
+  "reference_files": [
+    "/home/marti8ha/repos/Pysweeper/settings.py",
+    "/home/marti8ha/repos/Pysweeper/core/game.py",
+    "/home/marti8ha/repos/Pysweeper/ui/button.py",
+    "/home/marti8ha/repos/Pysweeper/ui/hud.py",
+    "/home/marti8ha/repos/Pysweeper/ui/menu.py",
+    "/home/marti8ha/repos/Pysweeper/ui/leaderboard.py"
+  ],
+  "exit_criteria": [
+    "Tiles have rounded corners with modern styling",
+    "Buttons have rounded corners with enhanced effects",
+    "HUD restart button is rounded",
+    "Game over overlay has rounded corners",
+    "All hover states work smoothly",
+    "Visual consistency across all screens",
+    "Game remains fully functional"
+  ],
+  "subtask_count": 6,
+  "completed_count": 0,
+  "created_at": "2026-02-04T00:00:00Z"
+}
