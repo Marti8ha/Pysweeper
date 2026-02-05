@@ -2,26 +2,34 @@
 
 import pygame
 import settings
+from ui.pixel_utils import draw_pixel_text, draw_pixel_button, get_pixel_text_width, get_pixel_text_height
 
 
 class Button:
-    """Interactive button component with hover and click states."""
+    """Interactive button component with true pixel art styling."""
+
+    # Padding around text inside button
+    PADDING_X = 24
+    PADDING_Y = 16
 
     def __init__(self, x, y, width, height, text, onClick=None):
-        self.rect = pygame.Rect(x, y, width, height)
         self.text = text
         self.onClick = onClick
         self.isHovered = False
         self.isPressed = False
-        # Try to use Cascadia Mono Bold or monospace font
-        try:
-            self.font = pygame.font.Font("CascadiaMono-Bold.ttf", 28)
-        except (FileNotFoundError, IOError):
-            self.font = pygame.font.Font(None, 28)
         
-        # Animation state
-        self.hoverProgress = 0.0
-        self.pressProgress = 0.0
+        # Calculate size based on text if width/height not provided or too small
+        text_width = get_pixel_text_width(text, size='medium')
+        text_height = get_pixel_text_height(size='medium')
+        
+        min_width = text_width + self.PADDING_X * 2
+        min_height = text_height + self.PADDING_Y * 2
+        
+        # Use provided dimensions if they're larger than minimum required
+        final_width = max(width, min_width)
+        final_height = max(height, min_height)
+        
+        self.rect = pygame.Rect(x, y, final_width, final_height)
 
     def handleEvent(self, event):
         """Process pygame events for this button."""
@@ -40,70 +48,40 @@ class Button:
                 self.isPressed = False
 
     def draw(self, surface):
-        """Render button to screen with smooth visual feedback."""
-        # Smooth hover animation
-        targetHover = 1.0 if self.isHovered else 0.0
-        self.hoverProgress += (targetHover - self.hoverProgress) * 0.15
-        
-        # Smooth press animation
-        targetPress = 1.0 if self.isPressed else 0.0
-        self.pressProgress += (targetPress - self.pressProgress) * 0.2
-
-        # Calculate colors based on state
+        """Render true pixel art button to screen."""
+        # Determine colors based on state
         if self.isPressed:
             baseColor = settings.COLORS["button_pressed"]
-            borderColor = settings.COLORS["button_border"]
-            offset = 2
+            borderColor = settings.COLORS["accent"]
         elif self.isHovered:
-            # Interpolate between normal and hover
-            baseColor = self._interpolateColor(
-                settings.COLORS["button_background"],
-                settings.COLORS["button_hover"],
-                self.hoverProgress
+            baseColor = (
+                min(255, settings.COLORS["button_background"][0] + 20),
+                min(255, settings.COLORS["button_background"][1] + 20),
+                min(255, settings.COLORS["button_background"][2] + 20)
             )
             borderColor = settings.COLORS["accent"]
-            offset = 0
         else:
             baseColor = settings.COLORS["button_background"]
             borderColor = settings.COLORS["button_border"]
-            offset = 0
 
-        # Draw button background
-        pygame.draw.rect(surface, baseColor, self.rect)
+        # Draw pixel art button with slight rounding and bevel
+        draw_pixel_button(surface, self.rect, baseColor, borderColor, 
+                         pressed=self.isPressed, hovered=self.isHovered)
 
-        # Draw subtle glow effect on hover
-        if self.isHovered:
-            glowRect = self.rect.inflate(4, 4)
-            glowSurface = pygame.Surface(glowRect.size, pygame.SRCALPHA)
-            glowColor = (*settings.COLORS["accent"], int(40 * self.hoverProgress))
-            pygame.draw.rect(glowSurface, glowColor, glowSurface.get_rect(), border_radius=8)
-            surface.blit(glowSurface, glowRect.topleft)
-
-        # Draw border
-        borderWidth = 2 if not self.isHovered else 3
-        pygame.draw.rect(surface, borderColor, self.rect, borderWidth)
-
-        # Draw text with slight offset when pressed
-        textColor = settings.COLORS["text_primary"]
-        textSurf = self.font.render(self.text, True, textColor)
-        textRect = textSurf.get_rect(center=self.rect.center)
+        # Calculate text position (centered with slight offset when pressed)
+        text_width = get_pixel_text_width(self.text, size='medium')
+        text_height = get_pixel_text_height(size='medium')
         
-        # Subtle text shadow
-        shadowSurf = self.font.render(self.text, True, settings.COLORS["text_inverse"])
-        shadowRect = textRect.copy()
-        shadowRect.x += 1
-        shadowRect.y += 1
-        surface.blit(shadowSurf, shadowRect)
+        text_x = self.rect.x + (self.rect.width - text_width) // 2
+        text_y = self.rect.y + (self.rect.height - text_height) // 2
         
-        surface.blit(textSurf, textRect)
+        if self.isPressed:
+            text_x += 1
+            text_y += 1
 
-    def _interpolateColor(self, color1, color2, factor):
-        """Interpolate between two colors."""
-        return (
-            int(color1[0] + (color2[0] - color1[0]) * factor),
-            int(color1[1] + (color2[1] - color1[1]) * factor),
-            int(color1[2] + (color2[2] - color1[2]) * factor)
-        )
+        # Draw true pixel art text
+        draw_pixel_text(surface, self.text, text_x, text_y, 
+                       settings.COLORS["text_primary"], size='medium')
 
     def setPosition(self, x, y):
         """Move button to new coordinates."""
@@ -111,5 +89,23 @@ class Button:
         self.rect.y = y
 
     def setText(self, text):
-        """Update button label."""
+        """Update button label and recalculate size if needed."""
         self.text = text
+        
+        # Recalculate minimum required size
+        text_width = get_pixel_text_width(text, size='medium')
+        text_height = get_pixel_text_height(size='medium')
+        
+        min_width = text_width + self.PADDING_X * 2
+        min_height = text_height + self.PADDING_Y * 2
+        
+        # Update rect if current size is too small
+        if self.rect.width < min_width:
+            self.rect.width = min_width
+        if self.rect.height < min_height:
+            self.rect.height = min_height
+    
+    def recenter(self, screen_width, screen_height, y_offset=0):
+        """Center button horizontally on screen."""
+        self.rect.x = (screen_width - self.rect.width) // 2
+        self.rect.y = y_offset

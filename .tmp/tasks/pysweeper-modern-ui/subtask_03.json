@@ -1,0 +1,29 @@
+{
+  "id": "pysweeper-modern-ui-03",
+  "seq": "03",
+  "title": "Update menu styling",
+  "status": "in_progress",
+"agent_id": "coder-agent",
+"started_at": "2026-02-04T00:00:00Z",
+  "depends_on": [],
+  "parallel": true,
+  "suggested_agent": "OpenFrontendSpecialist",
+  "context_files": [
+    "/home/marti8ha/.config/opencode/context/core/standards/code-quality.md"
+  ],
+  "reference_files": [
+    "/home/marti8ha/repos/Pysweeper/settings.py",
+    "/home/marti8ha/repos/Pysweeper/ui/menu.py"
+  ],
+  "acceptance_criteria": [
+    "Menu container uses rounded corners where applicable",
+    "Decorative elements modernized (replaced lines with subtle accents)",
+    "Text labels use Cascadia Mono consistently",
+    "Button spacing and alignment improved",
+    "Visual hierarchy enhanced with better contrast",
+    "Title/logo area has modern styling"
+  ],
+  "deliverables": [
+    "/home/marti8ha/repos/Pysweeper/ui/menu.py (modified menu rendering)"
+  ]
+}

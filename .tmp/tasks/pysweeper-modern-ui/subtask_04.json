@@ -1,0 +1,30 @@
+{
+  "id": "pysweeper-modern-ui-04",
+  "seq": "04",
+  "title": "Update leaderboard styling",
+  "status": "completed",
+  "agent_id": "coder-agent",
+  "started_at": "2026-02-04T00:00:00Z",
+  "completed_at": "2026-02-04T00:00:00Z",
+  "depends_on": [],
+  "parallel": true,
+  "suggested_agent": "OpenFrontendSpecialist",
+  "context_files": [
+    "/home/marti8ha/.config/opencode/context/core/standards/code-quality.md"
+  ],
+  "reference_files": [
+    "/home/marti8ha/repos/Pysweeper/settings.py",
+    "/home/marti8ha/repos/Pysweeper/ui/leaderboard.py"
+  ],
+  "acceptance_criteria": [
+    "Leaderboard table has rounded container corners",
+    "Row styling alternates with subtle color differences",
+    "Header row visually distinct from data rows",
+    "Text alignment consistent across all columns",
+    "Close/back button uses modern button styling",
+    "Empty state has appropriate messaging"
+  ],
+  "deliverables": [
+    "/home/marti8ha/repos/Pysweeper/ui/leaderboard.py (modified table rendering)"
+  ]
+}

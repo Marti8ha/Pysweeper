@@ -1,0 +1,30 @@
+{
+  "id": "pysweeper-modern-ui-01",
+  "seq": "01",
+  "title": "Modernize minesweeper tiles",
+  "status": "completed",
+  "agent_id": "coder-agent",
+  "started_at": "2026-02-04T00:00:00Z",
+  "completed_at": "2026-02-04T00:15:00Z",
+  "depends_on": [],
+  "parallel": true,
+  "suggested_agent": "OpenFrontendSpecialist",
+  "context_files": [
+    "/home/marti8ha/.config/opencode/context/core/standards/code-quality.md"
+  ],
+  "reference_files": [
+    "/home/marti8ha/repos/Pysweeper/settings.py",
+    "/home/marti8ha/repos/Pysweeper/core/game.py"
+  ],
+  "acceptance_criteria": [
+    "Tiles use pygame.draw.rect with border_radius=8 for rounded corners",
+    "3D bevel effect replaced with subtle shadow or modern flat design",
+    "Revealed tiles maintain clear number visibility",
+    "Flag tiles use rounded corners consistently",
+    "Mine tiles maintain recognizable appearance",
+    "All tile states (hidden, revealed, flagged, mine) styled consistently"
+  ],
+  "deliverables": [
+    "/home/marti8ha/repos/Pysweeper/core/game.py (modified drawTile method, lines 338-374)"
+  ]
+}
