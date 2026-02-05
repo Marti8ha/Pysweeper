@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 .opencode
+.tmp
 
 # C extensions
 *.so
