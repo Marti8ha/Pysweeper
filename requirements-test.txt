@@ -1,2 +1,3 @@
 # Test dependencies for Pysweeper
 pytest>=7.0.0
+setuptools<81

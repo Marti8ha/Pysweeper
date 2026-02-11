@@ -130,6 +130,8 @@ class Board:
         wasFlagged = tile.isFlagged
         tile.toggleFlag()
         self.flagCount += 1 if not wasFlagged else -1
+        # After a flag change, check 'minefishing' win condition: all mines flagged
+        self.checkFlagWin()
 
     def revealAllMines(self):
         """Show all mine locations on game over."""
@@ -162,6 +164,25 @@ class Board:
                 if not tile.isMine and not tile.isRevealed:
                     count += 1
         return count
+
+    def getRemainingMines(self):
+        """Count mines that are not currently flagged.
+
+        This supports a 'minefishing' win condition where the player wins
+        when all mines have been flagged (remaining mines == 0).
+        """
+        remaining = 0
+        for r in range(self.rows):
+            for c in range(self.cols):
+                tile = self.tiles[r][c]
+                if tile.isMine and not tile.isFlagged:
+                    remaining += 1
+        return remaining
+
+    def checkFlagWin(self):
+        """Set game state to WIN when no unflagged mines remain."""
+        if self.getRemainingMines() == 0:
+            self.gameState = GameState.WIN
 
     def reset(self, rows, cols, mineCount):
         """Reset board with new dimensions."""
