@@ -3,6 +3,7 @@
 
 import pygame
 import sys
+import random
 from .state import GameState, Difficulty, Score
 from .board import Board
 from ui.hud import Hud
@@ -39,6 +40,9 @@ class Game:
         self.leaderboardStorage = None
         self.lastScoreRank = None
         self._endGameOverlay = False
+        # Win effect particles and final time storage
+        self.winParticles = []
+        self.finalElapsed = 0
         self.initDisplay()
         self.running = True
         self.startTime = 0
@@ -224,6 +228,10 @@ class Game:
         self.state = GameState.PLAYING
         self.startTime = pygame.time.get_ticks()
 
+        # Reset win effect and final time
+        self.winParticles = []
+        self.finalElapsed = 0
+
         # Reset scoring
         self.score = 0
         self.currentScoreDisplay = 0
@@ -243,6 +251,7 @@ class Game:
 
     def update(self):
         """Update game state each frame."""
+        # Active playing updates
         if self.state == GameState.PLAYING and self.board:
             elapsed = (pygame.time.get_ticks() - self.startTime) // 1000
             self.hud.setTimer(elapsed)
@@ -254,10 +263,22 @@ class Game:
             # Check for game end
             if self.board.gameState == GameState.GAME_OVER:
                 self._endGameOverlay = True
+                self.finalElapsed = elapsed
+                self.state = GameState.GAME_OVER
+                self.hud.setTimer(self.finalElapsed)
                 self._handleGameOver(elapsed)
             elif self.board.gameState == GameState.WIN:
+                # Freeze timer and start win effect
                 self._endGameOverlay = True
+                self.finalElapsed = elapsed
+                self.state = GameState.WIN
+                self.hud.setTimer(self.finalElapsed)
+                self._start_win_effect()
                 self._handleWin(elapsed)
+
+        # If we've won, update the win particle effect (timer stays frozen)
+        if self.state == GameState.WIN:
+            self._update_win_effect()
 
     def _updateScore(self, elapsed):
         """Update the current score based on tiles revealed.
@@ -363,6 +384,9 @@ class Game:
             self.drawScoreDisplay()
         elif self.state in (GameState.GAME_OVER, GameState.WIN):
             self.drawGame()
+            # Draw win particles behind overlay when won
+            if self.state == GameState.WIN:
+                self._draw_win_effect()
             self.drawEndGameOverlay()
         elif self.state == GameState.LEADERBOARD:
             self.leaderboardUI.draw(self.screen)
@@ -371,6 +395,55 @@ class Game:
         # self._draw_scanlines()
 
         pygame.display.flip()
+
+    def _start_win_effect(self):
+        """Initialize particle confetti effect on win."""
+        self.winParticles = []
+        if not self.board:
+            return
+
+        width = self.screen.get_width()
+        height = self.screen.get_height()
+
+        num_particles = max(30, (self.board.rows * self.board.cols) // 2)
+        colors = [settings.COLORS.get(k, (255, 255, 255)) for k in ("accent", "win", "flag", "mine")]
+
+        for _ in range(num_particles):
+            p = {
+                "x": random.randint(0, width),
+                "y": random.randint(self.currentOffsetY, self.currentOffsetY + self.board.rows * self.currentTileSize),
+                "vx": random.uniform(-2.5, 2.5),
+                "vy": random.uniform(-6.0, -1.5),
+                "size": random.randint(2, 6),
+                "color": random.choice(colors),
+                "life": random.randint(60, 140)
+            }
+            self.winParticles.append(p)
+
+    def _update_win_effect(self):
+        """Update particle positions and lifetimes."""
+        if not self.winParticles:
+            return
+
+        gravity = 0.22
+        new_particles = []
+        for p in self.winParticles:
+            p["x"] += p["vx"]
+            p["y"] += p["vy"]
+            p["vy"] += gravity
+            p["life"] -= 1
+            # keep particles on screen for lifetime
+            if p["life"] > 0 and 0 <= p["x"] <= self.screen.get_width() and p["y"] <= self.screen.get_height() + 50:
+                new_particles.append(p)
+        self.winParticles = new_particles
+
+    def _draw_win_effect(self):
+        """Render confetti particles to the screen."""
+        if not self.winParticles:
+            return
+        for p in self.winParticles:
+            rect = (int(p["x"]), int(p["y"]), p["size"], p["size"])
+            pygame.draw.rect(self.screen, p["color"], rect)
 
     def _draw_scanlines(self):
         """Draw subtle scanline overlay for retro CRT effect."""
